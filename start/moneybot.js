@@ -16,7 +16,6 @@ limitations under the License.
 
 A simplified Slack bot for reporting stocks information.
 */
-
 var https = require('https');
 var Botkit = require('botkit')
 var fs = require('fs') // NEW: Add this require (for loading from files).
@@ -29,9 +28,10 @@ if (!process.env.slack_token_path) {
     process.exit(1)
 }
 
+
 fs.readFile(process.env.slack_token_path, function (err, data) {
     if (err) {
-        console.log('Error: Specify token in slack_token_path file')
+        console.log('Error: Specify token in slack_token_path file');
         process.exit(1)
     }
 
@@ -50,8 +50,18 @@ fs.readFile(process.env.slack_token_path, function (err, data) {
 controller.hears(
     [''], ['direct_message', 'direct_mention', 'mention'],
     function (bot, message) {
-    // create stock url from message
-    var finUrl = "https://finance.google.com/finance/info?client=ig&q=" + message.text
+    // validate data
+    var tickers = message.text.split(" ");
+    var i;
+    var res;
+    for (i = 0; i < tickers.length; i++) {
+        res = track(bot, message, tickers[i]);
+    }
+})
+
+function track(bot, message, tickerSymbol) {
+        // create stock url from message
+    var finUrl = "https://finance.google.com/finance/info?client=ig&q=" + tickerSymbol
     
     https.get(finUrl, function (res) {
         res.setEncoding('binary');
@@ -63,26 +73,135 @@ controller.hears(
         
         res.on('end', function () {
             var preResult = resData.substring(3, resData.length - 1); // Google finance data starts with "//"
-            var result = JSON.parse(preResult);
-            var json = result[0];
+            try {
+                var result = JSON.parse(preResult);
+                var json = result[0];
+                var url = "http://finance.yahoo.com/quote/" + tickerSymbol;
+                //console.log(url);
+            
+                //var mf = MessageFormatter(json, url);
+                var summary = FormatMessage(json, url);
+            
+                //var lastTradeDate = Date.parse( json["lt_dts"]) / 1000;
 
-            //var lastTradeDate = Date.parse( json["lt_dts"]) / 1000;
-                                  
-            var stockSummary = "*" + json["t"] + "*"
-                                + "\n>Realtime: http://finance.yahoo.com/quote/" + message.text
-                                + "\n*Today*"
-                                + "\n>Prev Close: `$" + json["pcls_fix"] + "`"
-                                + "\n>Last: `$" + json["l"] + "`"
-                                + " Time: `" + json["lt"] + "`"
-                                + "\n>Change: `" + json["c"] + "`"
-                                + " Change(%): `" + json["cp"] + "`"
-                                + "\n*After Hours*"
-                                + "\n>Last: `$" + json["el"] + "`"
-                                + "  Time: `" + json["elt"] + "`"
-                                + "\n>Change: `" + json["ec"] + "`"
-                                + " Change(%): `" + json["ecp"] + "`";
-
-            bot.reply(message, stockSummary);
+                bot.reply(message, summary);
+            }
+            catch(err) {
+                bot.reply(message, ErrorMessage("Invalid ticker symbol: " + tickerSymbol));
+            }
         })
+        
+        res.on('error', function(err){
+            bot.reply(message, ErrorMessage(err));
+        });
     })
-})
+}
+
+//helper functions
+function ErrorMessage(err){
+    //we can extend this later
+    return "NOUUUUUUUU\n:party_parrot:\nmsg: "+err;
+}
+
+function FormatMessage(jsonResult, url){
+    var tickerSymbol = jsonResult["t"];
+    var previousClose = jsonResult["pcls_fix"];
+    var last = jsonResult["l"];
+    var lastTime = jsonResult["lt"];
+    var change = jsonResult["c"];
+    var changePercent = jsonResult["cp"];
+    var afterLast = jsonResult["el"];
+    var afterLastTime = jsonResult["elt"];
+    var afterChange = jsonResult["ec"];
+    var afterChangePercent = jsonResult["ecp"];
+    
+    const green = "#32CD32";
+    const red = "#FF0000";
+    const lightgray = "#E8E8E8";
+    var todayColor, afterColor;
+    
+    if(Number(change) > 0){
+        todayColor = green;
+    }else if(Number(change) < 0){
+        todayColor = red;
+    }else{
+        todayColor = lightgray;
+    }
+    
+    if(Number(afterChange) > 0){
+        afterColor = green;
+    }else if(Number(afterChange) < 0){
+        afterColor = red;
+    }else{
+        afterColor = lightgray;
+    }
+    
+    var daySummary = "Prev Close: *$" + previousClose + "*"
+                                + "\nLast: *$" + last + "*"
+                                + " Time: `" + lastTime + "`"
+                                + "\nChange: *" + change + "*"
+                                + " Change(%): *" + changePercent + "*";
+    var afterSummary = "Last: *$" + afterLast + "*"
+                                + " Time: `" + afterLastTime + "`"
+                                + "\nChange: *" + afterChange + "*"
+                                + " Change(%): *" + afterChangePercent + "*";
+
+    var jsin = {
+        "text": tickerSymbol + ": " + url,
+        "attachments": [
+            {
+                "title": "Day Hours",
+                "text": daySummary,
+                "color": todayColor,
+                "mrkdwn_in": ["text"]
+            },
+            {
+                "title": "After Hours",
+                "text": afterSummary,
+                "color": afterColor,
+                "mrkdwn_in": ["text"]
+            }
+        ]
+    };
+
+    return jsin;
+};
+//helper class 
+//michael: I'd like to revisit this later
+//syntaxerror: block-scoped declarations(let, const, function, class) not yet supported outside strict mode
+/*
+var MessageFormatter = class MessageFormatter{
+    //"use strict";
+    constructor(jsonResult, url){
+        this.tickerSymbol = jsonResult["t"];
+        this.URL = url;
+        this.previousClose = jsonResult["pcls_fix"];
+        this.last = jsonResult["l"];
+        this.lastTime = jsonResult["lt"];
+        this.change = jsonResult["c"];
+        this.changePercent = jsonResult["cp"];
+        this.afterLast = jsonResult["el"];
+        this.afterLastTime = jsonResult["elt"];
+        this.afterChange = jsonResult["ec"];
+        this.afterChangePercent = jsonResult["ecp"];
+    }
+    
+    summary(){
+        var stockSummary = "*" + this.tickerSymbol + "*"
+                                + "\n>Realtime: " + this.URL
+                                + "\n*Today*"
+                                + "\n>Prev Close: `$" + this.previousClose + "`"
+                                + "\n>Last: `$" + this.last + "`"
+                                + " Time: `" + this.lastTime + "`"
+                                + "\n>Change: `" + this.change + "`"
+                                + " Change(%): `" + this.changePercent + "`"
+                                + "\n*After Hours*"
+                                + "\n>Last: `$" + this.afterLast + "`"
+                                + "  Time: `" + this.afterLastTime + "`"
+                                + "\n>Change: `" + this.afterChange + "`"
+                                + " Change(%): `" + this.afterChangePercent + "`";
+                                
+        return stockSummary;
+    }
+};
+*/
