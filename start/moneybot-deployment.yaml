@@ -20,7 +20,7 @@ spec:
           mountPath: /etc/slack-token
         env:
         - name: slack_token_path
-          value: /etc/slack-token/slack-token
+          value: ./slack-token
       volumes:
       - name: slack-token
         secret:

@@ -16,7 +16,6 @@ limitations under the License.
 
 A simplified Slack bot for reporting stocks information.
 */
-
 var https = require('https');
 var Botkit = require('botkit')
 var fs = require('fs') // NEW: Add this require (for loading from files).
@@ -29,9 +28,10 @@ if (!process.env.slack_token_path) {
     process.exit(1)
 }
 
+
 fs.readFile(process.env.slack_token_path, function (err, data) {
     if (err) {
-        console.log('Error: Specify token in slack_token_path file')
+        console.log('Error: Specify token in slack_token_path file');
         process.exit(1)
     }
 
@@ -50,8 +50,17 @@ fs.readFile(process.env.slack_token_path, function (err, data) {
 controller.hears(
     [''], ['direct_message', 'direct_mention', 'mention'],
     function (bot, message) {
-    // create stock url from message
-    var finUrl = "https://finance.google.com/finance/info?client=ig&q=" + message.text
+    // validate data
+    var tickers = message.text.split(" ");
+    var i;
+    for (i = 0; i < tickers.length; i++) {
+        track(bot, message, tickers[i]);
+    }
+})
+
+function track(bot, message, tickerSymbol) {
+        // create stock url from message
+    var finUrl = "https://finance.google.com/finance/info?client=ig&q=" + tickerSymbol
     
     https.get(finUrl, function (res) {
         res.setEncoding('binary');
@@ -63,33 +72,34 @@ controller.hears(
         
         res.on('end', function () {
             var preResult = resData.substring(3, resData.length - 1); // Google finance data starts with "//"
-            var result = JSON.parse(preResult);
-            var json = result[0];
+            try {
+                var result = JSON.parse(preResult);
+                var json = result[0];
+                var url = "http://finance.yahoo.com/quote/" + tickerSymbol;
+                //console.log(url);
             
-            var url = "http://finance.yahoo.com/quote/" + message.text;
-            //console.log(url);
+                //var mf = MessageFormatter(json, url);
+                var summary = FormatMessage(json, url);
             
-            //var mf = MessageFormatter(json, url);
-            var summary = FormatMessage(json, url);
-            
-            //var lastTradeDate = Date.parse( json["lt_dts"]) / 1000;
+                //var lastTradeDate = Date.parse( json["lt_dts"]) / 1000;
 
-            bot.reply(message, summary);
+                bot.reply(message, summary);
+            }
+            catch(err) {
+                bot.reply(message, ErrorMessage("Invalid ticker symbol: " + tickerSymbol));
+            }
         })
-
-        //this doesn't work right now
+        
         res.on('error', function(err){
-           // handle errors here
-           bot.reply(message, ErrorMessage(err));
+            bot.reply(message, ErrorMessage(err));
         });
     })
-})
-
+}
 
 //helper functions
 function ErrorMessage(err){
     //we can extend this later
-    return "NOUUUUUUUU\n:party_parrot:";
+    return "NOUUUUUUUU\n:party_parrot:\nmsg: "+err;
 }
 
 function FormatMessage(jsonResult, url){
