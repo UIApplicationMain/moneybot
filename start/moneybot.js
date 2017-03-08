@@ -99,7 +99,7 @@ function track(bot, message, tickerSymbol) {
 //helper functions
 function ErrorMessage(err){
     //we can extend this later
-    return "NOUUUUUUUU\n:party_parrot:\nmsg: "+err;
+    return "An error occured: " + err;
 }
 
 function FormatMessage(jsonResult, url){
@@ -145,7 +145,7 @@ function FormatMessage(jsonResult, url){
                                 + "\nChange: *" + afterChange + "*"
                                 + " Change(%): *" + afterChangePercent + "*";
 
-    var jsin = {
+    var json = {
         "text": tickerSymbol + ": " + url,
         "attachments": [
             {
@@ -163,7 +163,7 @@ function FormatMessage(jsonResult, url){
         ]
     };
 
-    return jsin;
+    return json;
 };
 //helper class 
 //michael: I'd like to revisit this later
