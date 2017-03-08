@@ -1,0 +1,19 @@
+{
+  "name": "money-bot",
+  "version": "2.0.0",
+  "description": "A simplified Slack bot for stocks information.",
+  "main": "moneybot.js",
+  "dependencies": {
+    "botkit": "0.4.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hellojeffy/moneybot.git"
+  },
+  "author": "Jeffery Kuo",
+  "license": "Apache-2.0"
+}

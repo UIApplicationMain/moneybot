@@ -1,0 +1,27 @@
+apiVersion: extensions/v1beta1 
+kind: Deployment 
+metadata:
+  name: moneybot
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: moneybot
+    spec:
+      containers:
+      - name: master
+        image: gcr.io/PROJECT_ID/moneybot:v2  # Replace PROJECT_ID
+                                                   # with your project ID.
+        volumeMounts:
+        - name: slack-token
+          mountPath: /etc/slack-token
+        env:
+        - name: slack_token_path
+          value: /etc/slack-token/slack-token
+      volumes:
+      - name: slack-token
+        secret:
+          secretName: slack-token
