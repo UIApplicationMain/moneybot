@@ -53,9 +53,8 @@ controller.hears(
     // validate data
     var tickers = message.text.split(" ");
     var i;
-    var res;
     for (i = 0; i < tickers.length; i++) {
-        res = track(bot, message, tickers[i]);
+        track(bot, message, tickers[i]);
     }
 })
 
