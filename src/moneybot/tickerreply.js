@@ -92,17 +92,6 @@ function GetColorAndSigns(change){
         percentageSign = "";
     }
 
-/*
-    var previousJSONText = ComparePrevious(tickerSymbol, last);
-    if(previousJSONText){
-        var previousJSON = {
-            "title":"Change since last request",
-            "text": previousJSONText,
-            "color":"",
-            "mrkdwn_in": ["text"]
-        }
-    }
-    */
     return [color, percentageSign];
 }
 
