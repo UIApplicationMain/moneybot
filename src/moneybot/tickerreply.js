@@ -73,7 +73,7 @@ function ErrorMessage(err){
 }
 
 //TODO
-function GetColor(change){
+function GetColorAndSigns(change){
     var color, percentageSign;
     //green color for positive
     const positive = "#32CD32";
@@ -91,7 +91,19 @@ function GetColor(change){
         color = noChange;
         percentageSign = "";
     }
-    return null;
+
+/*
+    var previousJSONText = ComparePrevious(tickerSymbol, last);
+    if(previousJSONText){
+        var previousJSON = {
+            "title":"Change since last request",
+            "text": previousJSONText,
+            "color":"",
+            "mrkdwn_in": ["text"]
+        }
+    }
+    */
+    return [color, percentageSign];
 }
 
 function FormatMessage(jsonResult, url){
@@ -114,28 +126,10 @@ function FormatMessage(jsonResult, url){
     const noChange = "#E8E8E8";
     var todayColor, afterColor;
     var percentageSign, afterPercentageSign;
-
-    if(Number(change) > 0){
-        todayColor = positive;
-        percentageSign = "+";
-    }else if(Number(change) < 0){
-        todayColor = negative;
-        percentageSign = "";
-    }else{
-        todayColor = noChange;
-        percentageSign = "";
-    }
-    
-    if(Number(afterChange) > 0){
-        afterColor = positive;
-        afterPercentageSign = "+";
-    }else if(Number(afterChange) < 0){
-        afterColor = negative;
-        afterPercentageSign = "";
-    }else{
-        afterColor = noChange;
-        afterPercentageSign = "";
-    }
+    todayColor = GetColorAndSigns(change)[0];
+    percentageSign = GetColorAndSigns(change)[1];
+    afterColor = GetColorAndSigns(afterChange)[0];    
+    afterPercentageSign = GetColorAndSigns(afterChange)[1];
 
     var previousJSONText = ComparePrevious(tickerSymbol, last);
     if(previousJSONText){
