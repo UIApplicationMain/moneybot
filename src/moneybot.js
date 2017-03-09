@@ -19,7 +19,6 @@ A simplified Slack bot for reporting stocks information.
 var https = require('https');
 var Botkit = require('botkit')
 var fs = require('fs') // NEW: Add this require (for loading from files).
-var PriceDictionary = {};
 
 var controller = Botkit.slackbot({debug: false})
 
@@ -53,6 +52,7 @@ controller.hears(
     function (bot, message) {
     // validate data
     var tickers = message.text.split(" ");
+    var i;
     for (i = 0; i < tickers.length; i++) {
         track(bot, message, tickers[i]);
     }
@@ -81,6 +81,7 @@ function track(bot, message, tickerSymbol) {
                 var result = JSON.parse(preResult);
                 var json = result[0];
                 var url = "http://finance.yahoo.com/quote/" + tickerSymbol;
+                //console.log(url);
             
                 //var mf = MessageFormatter(json, url);
                 var summary = FormatMessage(json, url);
@@ -101,52 +102,9 @@ function track(bot, message, tickerSymbol) {
 }
 
 //helper functions
-function ComparePrevious(ticker, newValue){
-    var jsonText;
-    ticker = ticker.toUpperCase();
-    if(PriceDictionary[ticker]){
-        var previousValue = PriceDictionary[ticker];
-        var difference = Number(newValue) - previousValue;
-        difference = difference.toPrecision(4);
-        var percentChange = difference / previousValue;
-        percentChange = (percentChange*100).toPrecision(4);
-        
-        if(difference > 0){
-            jsonText = "$" + newValue + ", " + difference + " (+" + percentChange + "%) since last request"; 
-        }else if(difference < 0){
-            jsonText = "$" + newValue + ", " + difference + " (" + percentChange + "%) since last request"; 
-        }else{
-            jsonText = "$" + newValue + ", " + difference + " (" + percentChange + "%) since last request"; 
-        }
-    }
-    PriceDictionary[ticker] = Number(newValue);
-    return jsonText;
-}
 function ErrorMessage(err){
     //we can extend this later
     return "An error occured: " + err;
-}
-
-//TODO
-function GetColor(change){
-    var color, percentageSign;
-    //green color for positive
-    const positive = "#32CD32";
-    //red color for negative
-    const negative = "#FF0000";
-    //light gray color for no change
-    const noChange = "#E8E8E8";
-    if(Number(change) > 0){
-        color = positive;
-        percentageSign = "+";
-    }else if(Number(change) < 0){
-        color = negative;
-        percentageSign = "";
-    }else{
-        color = noChange;
-        percentageSign = "";
-    }
-    return null;
 }
 
 function FormatMessage(jsonResult, url){
@@ -161,45 +119,32 @@ function FormatMessage(jsonResult, url){
     var afterChange = jsonResult["ec"];
     var afterChangePercent = jsonResult["ecp"];
     
-    //green color for positive
-    const positive = "#32CD32";
-    //red color for negative
-    const negative = "#FF0000";
-    //light gray color for no change
-    const noChange = "#E8E8E8";
+    const green = "#32CD32";
+    const red = "#FF0000";
+    const lightgray = "#E8E8E8";
     var todayColor, afterColor;
     var percentageSign, afterPercentageSign;
 
     if(Number(change) > 0){
-        todayColor = positive;
+        todayColor = green;
         percentageSign = "+";
     }else if(Number(change) < 0){
-        todayColor = negative;
+        todayColor = red;
         percentageSign = "";
     }else{
-        todayColor = noChange;
+        todayColor = lightgray;
         percentageSign = "";
     }
     
     if(Number(afterChange) > 0){
-        afterColor = positive;
+        afterColor = green;
         afterPercentageSign = "+";
     }else if(Number(afterChange) < 0){
-        afterColor = negative;
+        afterColor = red;
         afterPercentageSign = "";
     }else{
-        afterColor = noChange;
+        afterColor = lightgray;
         afterPercentageSign = "";
-    }
-
-    var previousJSONText = ComparePrevious(tickerSymbol, last);
-    if(previousJSONText){
-        var previousJSON = {
-            "title":"Change since last request",
-            "text": previousJSONText,
-            "color":"",
-            "mrkdwn_in": ["text"]
-        }
     }
     
     var daySummary = "Prev Close: *$" + previousClose + "*"
@@ -213,7 +158,6 @@ function FormatMessage(jsonResult, url){
     var json = {
         "text": "*" + tickerSymbol + "*: " + url,
         "attachments": [
-            previousJSON,
             {
                 "title": "Day Hours",
                 "text": daySummary,
