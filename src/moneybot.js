@@ -143,13 +143,13 @@ function FormatMessage(jsonResult, url){
     var daySummary = "Prev Close: *$" + previousClose + "*"
                                 + "\nLast: *$" + last + "*"
                                 + " Time: `" + lastTime + "`"
-                                + "\nChange: *" + change + " (" + changePercent +")*";
+                                + "\nChange: *" + change + " (" + changePercent +"%)*";
     var afterSummary = "Last: *$" + afterLast + "*"
                                 + " Time: `" + afterLastTime + "`"
-                                + "\nChange: *" + afterChange + " (" + afterChangePercent + ")*";
+                                + "\nChange: *" + afterChange + " (" + afterChangePercent + "%)*";
 
     var json = {
-        "text*": tickerSymbol + "*: " + url,
+        "text": "*" + tickerSymbol + "*: " + url,
         "attachments": [
             {
                 "title": "Day Hours",
