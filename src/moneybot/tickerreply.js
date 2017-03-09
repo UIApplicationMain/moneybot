@@ -46,6 +46,10 @@ exports.track = function track(bot, message, tickerSymbol) {
 }
 
 //helper functions
+exports.clearDictionary = function ClearDictionary(){
+    PriceDictionary = {};
+};
+
 function ComparePrevious(ticker, newValue){
     var jsonText;
     ticker = ticker.toUpperCase();

@@ -22,6 +22,9 @@ var tickerreply = require('./moneybot/tickerreply.js')
 
 var controller = Botkit.slackbot({debug: false})
 
+var schedule = require('node-schedule');
+var job = schedule.scheduleJob("59 23 * * *", tickerreply.clearDictionary());
+
 // START: Load Slack token from file.
 if (!process.env.slack_token_path) {
     console.log('Error: Specify slack_token_path in environment')
