@@ -52,7 +52,7 @@ controller.hears(
     function (bot, message) {
     // validate data
     var tickers = message.text.split(" ");
-    for (i = 0; i < tickers.length; i++) {
+    for (var i = 0; i < tickers.length; i++) {
         tickerreply.track(bot, message, tickers[i]);
     }
 })
