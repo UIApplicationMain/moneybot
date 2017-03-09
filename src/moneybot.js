@@ -123,30 +123,37 @@ function FormatMessage(jsonResult, url){
     const red = "#FF0000";
     const lightgray = "#E8E8E8";
     var todayColor, afterColor;
-    
+    var percentageSign, afterPercentageSign;
+
     if(Number(change) > 0){
         todayColor = green;
+        percentageSign = "+";
     }else if(Number(change) < 0){
         todayColor = red;
+        percentageSign = "";
     }else{
         todayColor = lightgray;
+        percentageSign = "";
     }
     
     if(Number(afterChange) > 0){
         afterColor = green;
+        afterPercentageSign = "+";
     }else if(Number(afterChange) < 0){
         afterColor = red;
+        afterPercentageSign = "";
     }else{
         afterColor = lightgray;
+        afterPercentageSign = "";
     }
     
     var daySummary = "Prev Close: *$" + previousClose + "*"
                                 + "\nLast: *$" + last + "*"
                                 + " Time: `" + lastTime + "`"
-                                + "\nChange: *" + change + " (" + changePercent +"%)*";
+                                + "\nChange: *" + change + " (" + percentageSign + changePercent +"%)*";
     var afterSummary = "Last: *$" + afterLast + "*"
                                 + " Time: `" + afterLastTime + "`"
-                                + "\nChange: *" + afterChange + " (" + afterChangePercent + "%)*";
+                                + "\nChange: *" + afterChange + " (" + afterPercentageSign + afterChangePercent + "%)*";
 
     var json = {
         "text": "*" + tickerSymbol + "*: " + url,
