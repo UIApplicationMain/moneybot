@@ -59,6 +59,11 @@ controller.hears(
 })
 
 function track(bot, message, tickerSymbol) {
+    // handling for ticker requests starting with $
+    if (tickerSymbol.startsWith("$")) {
+        tickerSymbol = tickerSymbol.substring(1, tickerSymbol.length - 1);
+    }
+
         // create stock url from message
     var finUrl = "https://finance.google.com/finance/info?client=ig&q=" + tickerSymbol
     
@@ -138,15 +143,13 @@ function FormatMessage(jsonResult, url){
     var daySummary = "Prev Close: *$" + previousClose + "*"
                                 + "\nLast: *$" + last + "*"
                                 + " Time: `" + lastTime + "`"
-                                + "\nChange: *" + change + "*"
-                                + " Change(%): *" + changePercent + "*";
+                                + "\nChange: *" + change + " (" + changePercent +")*";
     var afterSummary = "Last: *$" + afterLast + "*"
                                 + " Time: `" + afterLastTime + "`"
-                                + "\nChange: *" + afterChange + "*"
-                                + " Change(%): *" + afterChangePercent + "*";
+                                + "\nChange: *" + afterChange + " (" + afterChangePercent + ")*";
 
     var json = {
-        "text": tickerSymbol + ": " + url,
+        "text*": tickerSymbol + "*: " + url,
         "attachments": [
             {
                 "title": "Day Hours",
