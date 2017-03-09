@@ -61,7 +61,7 @@ controller.hears(
 function track(bot, message, tickerSymbol) {
     // handling for ticker requests starting with $
     if (tickerSymbol.startsWith("$")) {
-        tickerSymbol = tickerSymbol.substring(1, tickerSymbol.length - 1);
+        tickerSymbol = tickerSymbol.substring(1, tickerSymbol.length);
     }
 
         // create stock url from message
