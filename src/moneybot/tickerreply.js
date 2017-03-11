@@ -138,11 +138,11 @@ function FormatMessage(jsonResult, url){
     
     var dayJSON = GenerateText("Day Hours", dayObj);
 
-    if ( typeof afterLast !== "undefined") {
-        var afterJSON = GenerateText("After Hours", afterObj);
+    if (!afterLast) {
+        var afterJSON = ""
     }
     else{
-        var afterJSON = ""
+        var afterJSON = GenerateText("After Hours", afterObj);
     }
     
     var json = {
