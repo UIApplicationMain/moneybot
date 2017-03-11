@@ -10,7 +10,7 @@ exports.track = function track(bot, message, tickerSymbol) {
     }
 
         // create stock url from message
-    var finUrl = "https://finance.google.com/finance/info?client=ig&q=" + tickerSymbol
+    var finUrl = "https://finance.google.com/finance/info?client=ig&q=" + tickerSymbol;
     
     https.get(finUrl, function (res) {
         res.setEncoding('binary');
@@ -37,13 +37,13 @@ exports.track = function track(bot, message, tickerSymbol) {
             catch(err) {
                 bot.reply(message, ErrorMessage("Invalid ticker symbol: " + tickerSymbol));
             }
-        })
+        });
         
         res.on('error', function(err){
             bot.reply(message, ErrorMessage(err));
         });
     })
-}
+};
 
 //helper functions
 function ComparePrevious(ticker, newValue){
@@ -121,7 +121,7 @@ function FormatMessage(jsonResult, url){
             "mrkdwn_in": ["text"]
         }
     }
-    
+
     var dayObj = {
         last : last,
         lastTime : lastTime,
@@ -137,7 +137,13 @@ function FormatMessage(jsonResult, url){
     };
     
     var dayJSON = GenerateText("Day Hours", dayObj);
-    var afterJSON = GenerateText("After Hours", afterObj);
+
+    if (!afterLast) {
+        var afterJSON = ""
+    }
+    else{
+        var afterJSON = GenerateText("After Hours", afterObj);
+    }
     
     var json = {
         "text": "*" + tickerSymbol + "*: " + url,
@@ -149,7 +155,7 @@ function FormatMessage(jsonResult, url){
     };
 
     return json;
-};
+}
 
 function GenerateText(titletext, attachmentObj){
     var color = GetColorAndSigns(attachmentObj.change)[0];
@@ -168,9 +174,9 @@ function GenerateText(titletext, attachmentObj){
         "text": JSONtext,
         "color": color,
         "mrkdwn_in": ["text"]
-    }
+    };
     return retJSON;
-};
+}
 
 //michael: I'd like to revisit this later
 //referenceerrors: can't read property 'change' of undefined (why does it think "this" is undefined????)
