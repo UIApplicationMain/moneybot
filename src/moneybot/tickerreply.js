@@ -290,7 +290,7 @@ MessageFormatter.prototype = function(){
     };
     
     return {
-        summary:getSummary()
+        summary:getSummary
     };
 }();
 */
