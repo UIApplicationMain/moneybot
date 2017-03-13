@@ -73,7 +73,7 @@ MessageFormatter.prototype = function(){
 
         var previousObject = ComparePrevious(this.tickerSymbol, this.last);
         if(previousObject.jsonText){
-            var previousColor = GetColorAndSigns(previousObject.change)[0];
+            var previousColor = ColorsAndSigns(previousObject.change)[0];
             var previousJSON = {
                 "title":"Change since last request",
                 "text": previousObject.jsonText,
@@ -171,8 +171,8 @@ MessageFormatter.prototype = function(){
     },
     
     GenerateText = function(titletext, attachmentObj){
-        var color = GetColorAndSigns(attachmentObj.change)[0];
-        var percentSign = GetColorAndSigns(attachmentObj.change)[1];
+        var color = ColorsAndSigns(attachmentObj.change)[0];
+        var percentSign = ColorsAndSigns(attachmentObj.change)[1];
         var JSONtext = "";
         if(titletext === "Day Hours"){
             JSONtext += "Prev Close: *$" + attachmentObj.prevClose + "*\n";
@@ -189,14 +189,9 @@ MessageFormatter.prototype = function(){
             "mrkdwn_in": ["text"]
         };
         return retJSON;
-    },
-    
-    TestingFunction = function(){
-        return "test";
     };
     
     return {
-        summary:GetSummary,
-        test: TestingFunction
+        summary:GetSummary
     };
 }();
