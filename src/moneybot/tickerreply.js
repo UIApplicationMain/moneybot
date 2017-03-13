@@ -27,8 +27,9 @@ exports.track = function track(bot, message, tickerSymbol) {
                 var json = result[0];
                 var url = "http://finance.yahoo.com/quote/" + tickerSymbol;
             
-                //var mf = MessageFormatter(json, url);
-                var summary = FormatMessage(json, url);
+                var formatter = new MessageFormatter(json, url);
+                var summary = formatter.summary();
+                //var summary = FormatMessage(json, url);
             
                 //var lastTradeDate = Date.parse( json["lt_dts"]) / 1000;
 
@@ -178,9 +179,6 @@ function GenerateText(titletext, attachmentObj){
     return retJSON;
 }
 
-//michael: I'd like to revisit this later
-//referenceerrors: can't read property 'change' of undefined (why does it think "this" is undefined????)
-/*
 var MessageFormatter = function(jsonResult, url){
     this.tickerSymbol = jsonResult["t"];
     this.previousClose = jsonResult["pcls_fix"];
@@ -196,55 +194,57 @@ var MessageFormatter = function(jsonResult, url){
 };
 
 MessageFormatter.prototype = function(){
-    var getSummary = function(){
-        console.log(this.change);
-        var todayColor, afterColor;
-        var percentageSign, afterPercentageSign;
-        todayColor = ColorsAndSigns(this.change)[0];
-        percentageSign = ColorsAndSigns(this.change)[1];
-        afterColor = ColorsAndSigns(this.afterChange)[0];    
-        afterPercentageSign = ColorsAndSigns(this.afterChange)[1];
-        
-        var previousJSONText = ComparePrevious(this.tickerSymbol, this.last);
-        if(previousJSONText){
+    var GetSummary = function(){
+
+        var previousObject = ComparePrevious(this.tickerSymbol, this.last);
+        if(previousObject.jsonText){
+            var previousColor = GetColorAndSigns(previousObject.change)[0];
             var previousJSON = {
                 "title":"Change since last request",
-                "text": previousJSONText,
-                "color":"",
+                "text": previousObject.jsonText,
+                "color": previousColor,
                 "mrkdwn_in": ["text"]
             }
         }
         
-        var daySummary = "Prev Close: *$" + this.previousClose + "*"
-                                    + "\nLast: *$" + this.last + "*"
-                                    + " Time: `" + this.lastTime + "`"
-                                    + "\nChange: *" + this.change + " (" + percentageSign + this.changePercent +"%)*";
-        var afterSummary = "Last: *$" + this.afterLast + "*"
-                                    + " Time: `" + this.afterLastTime + "`"
-                                    + "\nChange: *" + this.afterChange + " (" + afterPercentageSign + this.afterChangePercent + "%)*";
-            
+        var dayObj = {
+            last : this.last,
+            lastTime : this.lastTime,
+            change : this.change,
+            changePercent: this.changePercent,
+            prevClose: this.previousClose
+        };
+        var afterObj = {
+            last: this.afterLast,
+            lastTime: this.afterLastTime,
+            change: this.afterChange,
+            changePercent: this.afterChangePercent
+        };
+        
+        var dayJSON = GenerateText("Day Hours", dayObj);
+        
+        if (!this.afterLast) {
+            var afterJSON = ""
+        }
+        else{
+            var afterJSON = GenerateText("After Hours", afterObj);
+        }
+        
         var json = {
             "text": "*" + this.tickerSymbol + "*: " + this.URL,
             "attachments": [
                 previousJSON,
-                {
-                    "title": "Day Hours",
-                    "text": daySummary,
-                    "color": todayColor,
-                    "mrkdwn_in": ["text"]
-                },
-                {
-                    "title": "After Hours",
-                    "text": afterSummary,
-                    "color": afterColor,
-                    "mrkdwn_in": ["text"]
-                }
+                dayJSON,
+                afterJSON
             ]
         };
         
         return json;
     },
     
+    //returns an array of 2 var
+    //[0] is color
+    //[1] is sign
     ColorsAndSigns = function (change){
         var color, percentageSign;
         //green color for positive
@@ -268,7 +268,7 @@ MessageFormatter.prototype = function(){
     },
     
     ComparePrevious = function(ticker, newValue){
-        var jsonText;
+        var jsonText = "";
         ticker = ticker.toUpperCase();
         if(PriceDictionary[ticker]){
             var previousValue = PriceDictionary[ticker];
@@ -286,11 +286,42 @@ MessageFormatter.prototype = function(){
             }
         }
         PriceDictionary[ticker] = Number(newValue);
-        return jsonText;
+        
+        var previousObj = {
+            jsonText:jsonText,
+            change:difference
+        };
+        
+        return previousObj;
+    },
+    
+    GenerateText = function(titletext, attachmentObj){
+        var color = GetColorAndSigns(attachmentObj.change)[0];
+        var percentSign = GetColorAndSigns(attachmentObj.change)[1];
+        var JSONtext = "";
+        if(titletext === "Day Hours"){
+            JSONtext += "Prev Close: *$" + attachmentObj.prevClose + "*\n";
+        }
+        
+        JSONtext += "Last: *$" + attachmentObj.last + "*"
+                    + " Time: `" + attachmentObj.lastTime + "`"
+                    + "\nChange: *" + attachmentObj.change + " (" + percentSign + attachmentObj.changePercent +"%)*";
+                    
+        var retJSON = {
+            "title": titletext,
+            "text": JSONtext,
+            "color": color,
+            "mrkdwn_in": ["text"]
+        };
+        return retJSON;
+    },
+    
+    TestingFunction = function(){
+        return "test";
     };
     
     return {
-        summary:getSummary
+        summary:GetSummary,
+        test: TestingFunction
     };
 }();
-*/
