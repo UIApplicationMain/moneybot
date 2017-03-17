@@ -1,5 +1,5 @@
-
-var https = require('https');
+var Promise = require("bluebird");
+var request = require('request-promise');
 
 var PriceDictionary = {};
 
@@ -8,42 +8,35 @@ exports.track = function track(bot, message, tickerSymbol) {
     if (tickerSymbol.startsWith("$")) {
         tickerSymbol = tickerSymbol.substring(1, tickerSymbol.length);
     }
+    // create stock url from message
+    // var finUrl = "https://finance.google.com/finance/info?client=ig&q=" + tickerSymbol;
 
-        // create stock url from message
-    var finUrl = "https://finance.google.com/finance/info?client=ig&q=" + tickerSymbol;
-    
-    https.get(finUrl, function (res) {
-        res.setEncoding('binary');
-        var resData = "";
-        
-        res.on('data', function (chunk) {
-            return resData += chunk;
-        });
-        
-        res.on('end', function () {
-            var preResult = resData.substring(3, resData.length - 1); // Google finance data starts with "//"
-            try {
-                var result = JSON.parse(preResult);
-                var json = result[0];
-                var url = "http://finance.yahoo.com/quote/" + tickerSymbol;
+    var requests = [{
+        url: "https://api.iextrading.com/1.0/tops?symbols=" + tickerSymbol
+    }, {
+        url: "https://finance.google.com/finance/info?client=ig&q=" + tickerSymbol
+    }];
 
-                var formatter = new MessageFormatter(json, url);
-                var summary = formatter.summary();
-                //var summary = FormatMessage(json, url);
-            
-                //var lastTradeDate = Date.parse( json["lt_dts"]) / 1000;
+    Promise.map(requests, function(obj) {
+        return request(obj).then(function (body) {
+            return JSON.parse(body.replace("//", ""));
+        });
+    }).then(function(results) {
+        try{
+            var iex = results[0][0];
+            var google = results[1][0];
+            var url = "http://finance.yahoo.com/quote/" + tickerSymbol;
+            var formatter = new MessageFormatter(google,iex, url);
+            var summary = formatter.summary();
+            bot.reply(message, summary);
+        }
+        catch(err){
+            bot.reply(message, ErrorMessage("Invalid ticker symbol: " + tickerSymbol + err))
+        }
 
-                bot.reply(message, summary);
-            }
-            catch(err) {
-                bot.reply(message, ErrorMessage("Invalid ticker symbol: " + tickerSymbol));
-            }
-        });
-        
-        res.on('error', function(err){
-            bot.reply(message, ErrorMessage(err));
-        });
-    })
+    }, function(err) {
+        return "An error occured: " + err;
+    });
 };
 
 //helper functions
@@ -54,24 +47,27 @@ function ErrorMessage(err){
 
 //MessageFormatter class 
 //uses the revealing prototype pattern
-var MessageFormatter = function(jsonResult, url){
-    this.tickerSymbol = jsonResult["t"];
-    this.previousClose = jsonResult["pcls_fix"];
-    this.last = jsonResult["l"];
-    this.lastTime = jsonResult["lt"];
-    this.change = jsonResult["c"];
-    this.changePercent = jsonResult["cp"];
-    this.afterLast = jsonResult["el"];
-    this.afterLastTime = jsonResult["elt"];
-    this.afterChange = jsonResult["ec"];
-    this.afterChangePercent = jsonResult["ecp"];
+var MessageFormatter = function(jsonResult_google,jsonResult_iex, url){
+    this.tickerSymbol = jsonResult_iex["symbol"];
+    this.bidPrice = jsonResult_iex["bidPrice"];
+    this.askPrice = jsonResult_iex["askPrice"];
+    this.lastUpdated = jsonResult_iex["lastUpdated"];
+    this.previousClose = jsonResult_google["pcls_fix"];
+    this.last = jsonResult_google["l"];
+    this.lastTime = jsonResult_google["lt"];
+    this.afterLast = jsonResult_google["el"];
+    this.afterLastTime = jsonResult_google["elt"];
     this.URL = url;
+    this.change = jsonResult_google["c"];
+    this.changePercent = jsonResult_google["cp"];
+    this.afterChange = jsonResult_google["ec"];
+    this.afterChangePercent = jsonResult_google["ecp"];
 };
 
 MessageFormatter.prototype = function(){
     var GetSummary = function(){
 
-        var previousObject = ComparePrevious(this.tickerSymbol, this.last);
+        var previousObject = ComparePrevious(this.tickerSymbol, this.askPrice);
         if(previousObject.jsonText){
             var previousColor = ColorsAndSigns(previousObject.change)[0];
             var previousJSON = {
@@ -81,12 +77,15 @@ MessageFormatter.prototype = function(){
                 "mrkdwn_in": ["text"]
             }
         }
-        
+
+        var delta = CalculateChange(this.previousClose, this.askPrice);
+
         var dayObj = {
-            last : this.last,
-            lastTime : this.lastTime,
-            change : this.change,
-            changePercent: this.changePercent,
+            bidPrice : this.bidPrice,
+            askPrice : this.askPrice,
+            lastUpdated : new Date(this.lastUpdated),
+            change: delta.change,
+            changePercent: delta.changePercent,
             prevClose: this.previousClose
         };
         var afterObj = {
@@ -95,9 +94,9 @@ MessageFormatter.prototype = function(){
             change: this.afterChange,
             changePercent: this.afterChangePercent
         };
-        
+
         var dayJSON = GenerateText("Day Hours", dayObj);
-        
+
         if (!this.afterLast) {
             var afterJSON = ""
         }
@@ -142,6 +141,19 @@ MessageFormatter.prototype = function(){
         return [color, percentageSign];
     },
     
+    CalculateChange = function(previousClose, askPrice){
+
+        var change = askPrice - previousClose;
+        var changePercent = (change/previousClose)*100;
+
+        var changeObj = {
+            change:change,
+            changePercent:changePercent
+        };
+
+        return changeObj;
+    },
+
     ComparePrevious = function(ticker, newValue){
         var jsonText = "";
         ticker = ticker.toUpperCase();
@@ -178,8 +190,9 @@ MessageFormatter.prototype = function(){
             JSONtext += "Prev Close: *$" + attachmentObj.prevClose + "*\n";
         }
         
-        JSONtext += "Last: *$" + attachmentObj.last + "*"
-                    + " Time: `" + attachmentObj.lastTime + "`"
+        JSONtext += "Ask Price: *$" + attachmentObj.askPrice + "*"
+                    + "\nBid Price: *$" + attachmentObj.bidPrice + "*"
+                    + "\nLast Updated: `" + attachmentObj.lastUpdated+ "`"
                     + "\nChange: *" + attachmentObj.change + " (" + percentSign + attachmentObj.changePercent +"%)*";
                     
         var retJSON = {
