@@ -90,7 +90,7 @@ MessageFormatter.prototype = function(){
         };
         var afterObj = {
             last: this.afterLast,
-            lastTime: this.afterLastTime,
+            lastUpdated: this.afterLastTime,
             change: this.afterChange,
             changePercent: this.afterChangePercent
         };
@@ -187,12 +187,14 @@ MessageFormatter.prototype = function(){
         var percentSign = ColorsAndSigns(attachmentObj.change)[1];
         var JSONtext = "";
         if(titletext === "Day Hours"){
-            JSONtext += "Prev Close: *$" + attachmentObj.prevClose + "*\n";
+            JSONtext += "Prev Close: *$" + attachmentObj.prevClose + "*\n"
+            + "Ask/Bid Price: *$" + attachmentObj.askPrice + "/ $" + attachmentObj.bidPrice + "*";
         }
-        
-        JSONtext += "Ask Price: *$" + attachmentObj.askPrice + "*"
-                    + "\nBid Price: *$" + attachmentObj.bidPrice + "*"
-                    + "\nLast Updated: `" + attachmentObj.lastUpdated+ "`"
+        else if(titletext === "After Hours"){
+            JSONtext += "Last: *$" + attachmentObj.last + "*"
+        }
+
+        JSONtext += "\nLast Updated: `" + attachmentObj.lastUpdated+ "`"
                     + "\nChange: *" + attachmentObj.change + " (" + percentSign + attachmentObj.changePercent +"%)*";
                     
         var retJSON = {
