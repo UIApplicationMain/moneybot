@@ -150,9 +150,9 @@ MessageFormatter.prototype = function(){
 
         if (lastSalePrice != 0) {
             var change = lastSalePrice - previousClose;
-            change.toPrecision(2);
+            change = change.toPrecision(2);
             var changePercent = (change / previousClose) * 100;
-            changePercent.toPrecision(2);
+            changePercent = changePercent.toPrecision(2);
 
             var changeObj = {
                 change: change,
