@@ -4,7 +4,9 @@
   "description": "A simplified Slack bot for stocks information.",
   "main": "moneybot.js",
   "dependencies": {
-    "botkit": "0.4.0"
+    "bluebird": "^3.5.0",
+    "botkit": "0.4.0",
+    "request-promise": "^4.2.0"
   },
   "devDependencies": {},
   "scripts": {
