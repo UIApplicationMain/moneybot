@@ -18,7 +18,7 @@ A simplified Slack bot for reporting stocks information.
 */
 var Botkit = require('botkit')
 var fs = require('fs') // NEW: Add this require (for loading from files).
-var tickerreply = require('./moneybot/tickerreply.js')
+var tickerreply = require('./tickerreply.js')
 
 var controller = Botkit.slackbot({debug: false})
 
