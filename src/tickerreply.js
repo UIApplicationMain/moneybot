@@ -150,7 +150,9 @@ MessageFormatter.prototype = function(){
 
         if (lastSalePrice != 0) {
             var change = lastSalePrice - previousClose;
+            change.toPrecision(2);
             var changePercent = (change / previousClose) * 100;
+            changePercent.toPrecision(2);
 
             var changeObj = {
                 change: change,
@@ -203,7 +205,7 @@ MessageFormatter.prototype = function(){
             JSONtext += "Prev Close: *$" + attachmentObj.prevClose + "*"
             + "\nLast: *$" + attachmentObj.lastSalePrice + "* Change: *" + attachmentObj.change + " (" + percentSign + attachmentObj.changePercent +"%)* Time: `" + attachmentObj.lastUpdated + "`" 
             + "\nAsk/Bid Price: *$" + attachmentObj.askPrice + "/$" + attachmentObj.bidPrice + "*"
-            + "\nVolume: *" + attachmentObj.volume + "*";
+            + "\nVolume: *" + CommaSeparateNumber(attachmentObj.volume) + "*";
         }
         else if(titletext === "After Hours"){
             JSONtext += "Last: *$" + attachmentObj.last + "* Time: `" + attachmentObj.lastUpdated + "`"
@@ -217,6 +219,10 @@ MessageFormatter.prototype = function(){
             "mrkdwn_in": ["text"]
         };
         return retJSON;
+    };
+
+    CommaSeparateNumber = function(number) {
+        return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     };
     
     return {
