@@ -78,7 +78,7 @@ MessageFormatter.prototype = function(){
             }
         }
 
-        var delta = CalculateChange(this.previousClose, this.askPrice);
+        var delta = CalculateChange(this.previousClose, this.askPrice, this.changePercent, this.change);
 
         var dayObj = {
             bidPrice : this.bidPrice,
@@ -141,15 +141,23 @@ MessageFormatter.prototype = function(){
         return [color, percentageSign];
     },
     
-    CalculateChange = function(previousClose, askPrice){
+    CalculateChange = function(previousClose, askPrice, g_changePercent, g_change) {
 
-        var change = askPrice - previousClose;
-        var changePercent = (change/previousClose)*100;
+        if (askPrice != 0) {
+            var change = askPrice - previousClose;
+            var changePercent = (change / previousClose) * 100;
 
-        var changeObj = {
-            change:change,
-            changePercent:changePercent
-        };
+            var changeObj = {
+                change: change,
+                changePercent: changePercent
+            };
+        }
+        else {
+            var changeObj = {
+                change: g_change,
+                changePercent: g_changePercent
+            }
+        }
 
         return changeObj;
     },
