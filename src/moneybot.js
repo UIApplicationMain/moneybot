@@ -16,43 +16,67 @@ limitations under the License.
 
 A simplified Slack bot for reporting stocks information.
 */
+var envvar = require('dotenv').config()
 var Botkit = require('botkit')
 var fs = require('fs') // NEW: Add this require (for loading from files).
+var express    = require('express'),       // call express
+    app        = express()
+var bodyParser = require('body-parser')
 var tickerreply = require('./tickerreply.js')
 
-var controller = Botkit.slackbot({debug: false})
+var botMode = false;
+process.argv.forEach(function (val, index, array) {
+	console.log(index + ': ' + val);
+	if(index > 1){
+		if(val.toLowerCase() == "bot")
+			botMode = true;
+	}
+});
 
-// START: Load Slack token from file.
-if (!process.env.slack_token_path) {
-    console.log('Error: Specify slack_token_path in environment')
-    process.exit(1)
+if(botMode){
+	var controller = Botkit.slackbot({debug: false})
+	// START: Load Slack token from file.
+	// Create a .env file with the following key
+	// SLACK_API_KEY=BLAH
+
+	if (!process.env.SLACK_API_KEY) {
+		console.log('Error: Specify slack_token_path in environment')
+		process.exit(1)
+	}
+	controller.spawn( {token: process.env.SLACK_API_KEY} )
+			.startRTM(function (err) {
+				if (err) {
+					throw new Error(err)
+				}
+			})
+	// END: Load Slack token from file.
+
+	controller.hears(
+		[''], ['direct_message', 'direct_mention', 'mention'],
+		function (bot, message) {
+		// validate data
+		var tickers = message.text.split(" ");
+		for (var i = 0; i < tickers.length; i++) {
+			tickerreply.track(tickers[i], function(data){
+				bot.reply(message, data)
+			});
+		}
+	})
 }
+else{
+	app.use( bodyParser.json() );       // to support JSON-encoded bodies
+	app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
+	  extended: true
+	})); 
+		
+	app.post('/stock/', function(req, res){
+		var data = ticker.track(req.body.text, function(data){
+			console.log('data: ' + data);
+			res.send(data);	
+		});
+	})
 
-
-fs.readFile(process.env.slack_token_path, function (err, data) {
-    if (err) {
-        console.log('Error: Specify token in slack_token_path file');
-        process.exit(1)
-    }
-
-    data = String(data)
-    data = data.replace(/\s/g, '')
-    
-    controller.spawn( {token: data} )
-            .startRTM(function (err) {
-                if (err) {
-                    throw new Error(err)
-                }
-            })
-})
-// END: Load Slack token from file.
-
-controller.hears(
-    [''], ['direct_message', 'direct_mention', 'mention'],
-    function (bot, message) {
-    // validate data
-    var tickers = message.text.split(" ");
-    for (var i = 0; i < tickers.length; i++) {
-        tickerreply.track(bot, message, tickers[i]);
-    }
-})
+	app.listen(4444, function(){
+		console.log('Listening for money on port 4444');
+	});
+}

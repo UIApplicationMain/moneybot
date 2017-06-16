@@ -4,7 +4,7 @@ var dateFormatter = require('dateformat');
 
 var PriceDictionary = {};
 
-exports.track = function track(bot, message, tickerSymbol) {
+exports.track = function track(tickerSymbol, callBack) {
     // handling for ticker requests starting with $
     if (tickerSymbol.startsWith("$")) {
         tickerSymbol = tickerSymbol.substring(1, tickerSymbol.length);
@@ -15,7 +15,8 @@ exports.track = function track(bot, message, tickerSymbol) {
     var requests = [{ url: "https://api.iextrading.com/1.0/tops?symbols=" + tickerSymbol },
                  { url: "https://finance.google.com/finance/info?client=ig&q=" + tickerSymbol }];
 
-    Promise.map(requests, function(obj) {
+	
+    Promise.mapSeries(requests, function(obj) {
         return request(obj).then(function (body) {
             return JSON.parse(body.replace("//", ""));
         });
@@ -26,14 +27,17 @@ exports.track = function track(bot, message, tickerSymbol) {
             var url = "http://finance.yahoo.com/quote/" + tickerSymbol;
             var formatter = new MessageFormatter(google,iex, url);
             var summary = formatter.summary();
-            bot.reply(message, summary);
+            // bot.reply(message, summary);
+			console.log(summary);
+			callBack(summary);
         }
         catch(err){
-            bot.reply(message, ErrorMessage("Invalid ticker symbol: " + tickerSymbol + err))
+			callBack(err);
+            // bot.reply(message, ErrorMessage("Invalid ticker symbol: " + tickerSymbol + err))
         }
 
     }, function(err) {
-        return "An error occured: " + err;
+        return callBack("An error occured: " + err);
     });
 };
 
@@ -110,6 +114,7 @@ MessageFormatter.prototype = function(){
         }
         
         var json = {
+			"response_type": "in_channel",
             "text": "*" + this.tickerSymbol + "*: " + this.URL,
             "attachments": [
                 previousJSON,
